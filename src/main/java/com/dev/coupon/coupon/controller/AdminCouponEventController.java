@@ -24,6 +24,6 @@ public class AdminCouponEventController {
 
 	@GetMapping
 	public ApiResponse<List<CouponEventResponse>> list() {
-		return new ApiResponse<>(couponEventService.getCouponEvents());
+		return ApiResponse.success(couponEventService.getCouponEvents());
 	}
 }
