@@ -12,7 +12,9 @@ public enum CouponErrorCode implements ErrorCode {
 	INVALID_ISSUE_START_AT(HttpStatus.BAD_REQUEST, "INVALID_ISSUE_START_AT", "쿠폰 시작일시는 현재 시각보다 이전일 수 없습니다."),
 	INVALID_ISSUE_END_AT(HttpStatus.BAD_REQUEST, "INVALID_ISSUE_END_AT", "쿠폰 만료일시는 시작일시보다 이후여야 합니다."),
 	COUPON_NOT_USABLE(HttpStatus.BAD_REQUEST, "COUPON_NOT_USABLE", "사용 가능한 쿠폰이 아닙니다." ),
-	COUPON_EXPIRED(HttpStatus.BAD_REQUEST, "COUPON_EXPIRED", "만료된 쿠폰입니다.");
+	COUPON_EXPIRED(HttpStatus.BAD_REQUEST, "COUPON_EXPIRED", "만료된 쿠폰입니다."),
+	COUPON_ALREADY_USED(HttpStatus.BAD_REQUEST, "COUPON_ALREADY_USED", "이미 사용된 쿠폰입니다." ),
+	COUPON_ISSUE_NOT_FOUND(HttpStatus.BAD_REQUEST, "COUPON_ISSUE_NOT_FOUND", "찾을 수 없는 쿠폰입니다." );
 
 	private final HttpStatus httpStatus;
 	private final String code;

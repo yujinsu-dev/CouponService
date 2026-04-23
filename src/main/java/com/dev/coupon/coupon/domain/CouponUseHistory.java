@@ -45,14 +45,14 @@ public class CouponUseHistory extends BaseEntity {
 									Long originalPrice,
 									Long discountAmount,
 									Long finalPrice,
-									LocalDateTime userAt
+									LocalDateTime usedAt
 	) {
 		this.couponIssue = couponIssue;
 		this.product = product;
 		this.originalPrice = originalPrice;
 		this.discountAmount = discountAmount;
 		this.finalPrice = finalPrice;
-		this.usedAt = userAt;
+		this.usedAt = usedAt;
 	}
 
 }

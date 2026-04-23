@@ -2,12 +2,11 @@ package com.dev.coupon.coupon.domain;
 
 import com.dev.coupon.common.BaseEntity;
 import com.dev.coupon.common.exception.BusinessException;
-import com.dev.coupon.common.exception.ErrorCode;
 import com.dev.coupon.coupon.exception.CouponErrorCode;
+import com.dev.coupon.coupon.exception.ExpiredCouponException;
 import com.dev.coupon.user.domain.User;
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 
@@ -40,13 +39,17 @@ public class CouponIssue extends BaseEntity {
 	public void use(LocalDateTime usedAt) {
 		boolean isExpired = !couponEvent.getIssueEndAt().isAfter(usedAt);
 
+		if (status == IssueStatus.USED) {
+			throw new BusinessException(CouponErrorCode.COUPON_ALREADY_USED);
+		}
+
 		if (status != IssueStatus.ISSUED) {
 			throw new BusinessException(CouponErrorCode.COUPON_NOT_USABLE);
 		}
 
 		if (isExpired) {
 			this.status = IssueStatus.EXPIRED;
-			throw new BusinessException(CouponErrorCode.COUPON_EXPIRED);
+			throw new ExpiredCouponException();
 		}
 
 		this.status = IssueStatus.USED;
