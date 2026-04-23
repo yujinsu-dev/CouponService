@@ -11,7 +11,6 @@ import com.dev.coupon.product.domain.Product;
 import com.dev.coupon.product.exeception.ProductErrorCode;
 import com.dev.coupon.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +28,7 @@ public class CouponUseService {
 	public void useCoupon(Long issueId, Long userId, Long productId) {
 		LocalDateTime usedAt = LocalDateTime.now();
 
-		CouponIssue couponIssue = issueRepository.findByIdAndUserId(issueId, userId)
+		CouponIssue couponIssue = issueRepository.findByIdAndUserIdForUpdate(issueId, userId)
 				  .orElseThrow(() -> new BusinessException(CouponErrorCode.COUPON_ISSUE_NOT_FOUND));
 
 		Product product = productRepository.findById(productId)
