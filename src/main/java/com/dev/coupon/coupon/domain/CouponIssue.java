@@ -6,13 +6,16 @@ import com.dev.coupon.coupon.exception.CouponErrorCode;
 import com.dev.coupon.coupon.exception.ExpiredCouponException;
 import com.dev.coupon.user.domain.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Table(name = "coupon_issue")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CouponIssue extends BaseEntity {
 
 	@Id
@@ -35,6 +38,20 @@ public class CouponIssue extends BaseEntity {
 	private LocalDateTime issuedAt;
 
 	private LocalDateTime usedAt;
+
+	public CouponIssue(
+			  CouponEvent couponEvent,
+			  User user,
+			  IssueStatus status,
+			  LocalDateTime issuedAt,
+			  LocalDateTime usedAt
+	) {
+		this.couponEvent = couponEvent;
+		this.user = user;
+		this.status = status;
+		this.issuedAt = issuedAt;
+		this.usedAt = usedAt;
+	}
 
 	public void use(LocalDateTime usedAt) {
 		boolean isExpired = !couponEvent.getIssueEndAt().isAfter(usedAt);
