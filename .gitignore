@@ -1,5 +1,7 @@
 HELP.md
+AGENTS.md
 .gradle
+.gradle-user-home
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
