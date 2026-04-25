@@ -4,6 +4,7 @@ import com.dev.coupon.product.domain.Product;
 import com.dev.coupon.product.dto.PageResponse;
 import com.dev.coupon.product.dto.ProductCreateRequest;
 import com.dev.coupon.product.dto.ProductResponse;
+import com.dev.coupon.product.repository.ProductCondition;
 import com.dev.coupon.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,11 +29,36 @@ public class ProductService {
 		return ProductResponse.from(product);
 	}
 
+	/*
 	@Transactional(readOnly = true)
 	public PageResponse<ProductResponse> getProductPage(Pageable pageable) {
 		Page<ProductResponse> page = repository.findAll(pageable)
 				  .map(ProductResponse::from);
 
 		return PageResponse.from(page);
+	}
+	*/
+
+	@Transactional(readOnly = true)
+	public PageResponse<ProductResponse> search(ProductCondition condition, Pageable pageable) {
+		validationSearchCondition(condition);
+		Page<ProductResponse> page = repository.search(condition, pageable);
+
+		return new PageResponse<>(
+				  page.getContent(),
+				  page.getNumber(),
+				  page.getSize(),
+				  page.getTotalElements(),
+				  page.getTotalPages(),
+				  page.hasNext()
+		);
+	}
+
+	private void validationSearchCondition(ProductCondition condition) {
+		if (condition.getMinPrice() != null
+				  && condition.getMaxPrice() != null
+				  && condition.getMinPrice() > condition.getMaxPrice()) {
+			throw new IllegalArgumentException("minPrice는 maxPrice보다 클 수 없습니다.");
+		}
 	}
 }

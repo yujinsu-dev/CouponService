@@ -3,6 +3,7 @@ package com.dev.coupon.product.controller;
 import com.dev.coupon.product.dto.PageResponse;
 import com.dev.coupon.product.dto.ProductCreateRequest;
 import com.dev.coupon.product.dto.ProductResponse;
+import com.dev.coupon.product.repository.ProductCondition;
 import com.dev.coupon.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class AdminProductController {
 	}
 
 	@GetMapping
-	public PageResponse<ProductResponse> list(Pageable pageable) {
-		return productService.getProductPage(pageable);
+	public PageResponse<ProductResponse> search(ProductCondition condition, Pageable pageable) {
+		return productService.search(condition, pageable);
 	}
 }
