@@ -1,10 +1,12 @@
 package com.dev.coupon.user.repository.impl;
 
+import com.dev.coupon.coupon.domain.IssueStatus;
 import com.dev.coupon.coupon.domain.QCouponEvent;
 import com.dev.coupon.coupon.domain.QCouponIssue;
 import com.dev.coupon.user.dto.MyCouponListResponse;
 import com.dev.coupon.user.repository.UserCouponQueryRepository;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -38,7 +41,10 @@ public class UserCouponQueryRepositoryImpl implements UserCouponQueryRepository 
 							 couponEvent.issueEndAt))
 				  .from(couponIssue)
 				  .join(couponIssue.couponEvent, couponEvent)
-				  .where(couponIssue.user.id.eq(userId))
+				  .where(
+							 couponIssue.user.id.eq(userId),
+							 getUsableCoupons(couponEvent, couponIssue)
+				  )
 				  .orderBy(couponIssue.id.desc())
 				  .offset(pageable.getOffset())
 				  .limit(pageable.getPageSize())
@@ -47,11 +53,21 @@ public class UserCouponQueryRepositoryImpl implements UserCouponQueryRepository 
 		JPAQuery<Long> countQuery = queryFactory
 				  .select(couponIssue.count())
 				  .from(couponIssue)
-				  .where(couponIssue.user.id.eq(userId));
+				  .where(
+							 couponIssue.user.id.eq(userId),
+							 getUsableCoupons(couponEvent, couponIssue)
+				  );
 
 		return PageableExecutionUtils.getPage(content, pageable, () -> {
 			Long count = countQuery.fetchOne();
 			return count == null ? 0L : count;
 		});
+	}
+
+	public BooleanExpression getUsableCoupons(QCouponEvent event, QCouponIssue issue) {
+		LocalDateTime now = LocalDateTime.now();
+		return issue.status.eq(IssueStatus.ISSUED)
+				  .and(event.issueStartAt.loe(now))
+				  .and(event.issueEndAt.gt(now));
 	}
 }

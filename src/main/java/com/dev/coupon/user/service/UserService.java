@@ -18,7 +18,7 @@ public class UserService {
 	private final UserRepository repository;
 
 	@Transactional(readOnly = true)
-	public PageResponse<MyCouponListResponse> getMyCoupon(Long id, Pageable pageable) {
+	public PageResponse<MyCouponListResponse> getMyCoupons(Long id, Pageable pageable) {
 		if (!repository.existsById(id)) {
 			throw new BusinessException(UserErrorCode.USER_NOT_FOUND);
 		}

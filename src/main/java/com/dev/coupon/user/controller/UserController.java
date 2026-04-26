@@ -27,6 +27,6 @@ public class UserController {
 			  @PathVariable @Positive Long userId,
 			  @Valid CouponPageRequest request
 	) {
-		return ApiResponse.success(userService.getMyCoupon(userId, request.toPageable()));
+		return ApiResponse.success(userService.getMyCoupons(userId, request.toPageable()));
 	}
 }
