@@ -37,17 +37,4 @@ public class MyCouponListResponse {
 		this.maxDiscountAmount = maxDiscountAmount;
 		this.expiredAt = expiredAt;
 	}
-
-	public static MyCouponListResponse from(MyCouponListResponse coupon) {
-		return new MyCouponListResponse(
-				  coupon.getCouponEventId(),
-				  coupon.getCouponIssueId(),
-				  coupon.getCouponName(),
-				  coupon.getIssueStatus(),
-				  coupon.getDiscountType(),
-				  coupon.getDiscountValue(),
-				  coupon.getMaxDiscountAmount(),
-				  coupon.getExpiredAt()
-		);
-	}
 }

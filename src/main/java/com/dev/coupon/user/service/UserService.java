@@ -2,7 +2,6 @@ package com.dev.coupon.user.service;
 
 import com.dev.coupon.common.PageResponse;
 import com.dev.coupon.common.exception.BusinessException;
-import com.dev.coupon.user.domain.User;
 import com.dev.coupon.user.dto.MyCouponListResponse;
 import com.dev.coupon.user.exception.UserErrorCode;
 import com.dev.coupon.user.repository.UserRepository;
@@ -11,8 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
