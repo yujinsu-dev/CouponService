@@ -23,7 +23,7 @@ public class UserService {
 
 
 	@Transactional(readOnly = true)
-	public PageResponse<UserCouponResponse> getMyCoupons(Long id, CouponPageRequest request) {
+	public PageResponse<UserCouponResponse> getMyUsableCoupons(Long id, CouponPageRequest request) {
 		if (!userRepository.existsById(id)) {
 			throw new BusinessException(UserErrorCode.USER_NOT_FOUND);
 		}

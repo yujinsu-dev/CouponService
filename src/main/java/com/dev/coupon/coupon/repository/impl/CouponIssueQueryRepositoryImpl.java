@@ -44,7 +44,7 @@ public class CouponIssueQueryRepositoryImpl implements CouponIssueQueryRepositor
 				  .join(couponIssue.couponEvent, couponEvent)
 				  .where(
 							 couponIssue.user.id.eq(userId),
-							 getUsableCoupons(couponEvent, couponIssue)
+							 usableCoponCondition(couponEvent, couponIssue)
 				  )
 				  .orderBy(couponIssue.id.desc())
 				  .offset(pageable.getOffset())
@@ -56,7 +56,7 @@ public class CouponIssueQueryRepositoryImpl implements CouponIssueQueryRepositor
 				  .from(couponIssue)
 				  .where(
 							 couponIssue.user.id.eq(userId),
-							 getUsableCoupons(couponEvent, couponIssue)
+							 usableCoponCondition(couponEvent, couponIssue)
 				  );
 
 		return PageableExecutionUtils.getPage(content, pageable, () -> {
@@ -65,7 +65,7 @@ public class CouponIssueQueryRepositoryImpl implements CouponIssueQueryRepositor
 		});
 	}
 
-	public BooleanExpression getUsableCoupons(QCouponEvent event, QCouponIssue issue) {
+	public BooleanExpression usableCoponCondition(QCouponEvent event, QCouponIssue issue) {
 		LocalDateTime now = LocalDateTime.now();
 		return issue.status.eq(IssueStatus.ISSUED)
 				  .and(event.issueStartAt.loe(now))
