@@ -19,11 +19,4 @@ public class CouponPageRequest {
 	@Max(100)
 	private Integer size;
 
-	public Pageable toPageable() {
-		int p = (page == null) ? 0 : page - 1;
-		int s = (size == null) ? 10 : size;
-		return PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "id"));
-	}
-
-
 }
