@@ -1,15 +1,16 @@
 package com.dev.coupon.coupon.dto;
 
-import com.dev.coupon.common.BaseEntity;
 import com.dev.coupon.coupon.domain.DiscountType;
 import com.dev.coupon.coupon.domain.EventStatus;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 
 @Getter
-public class CouponEventCreateRequest extends BaseEntity {
+public class CouponEventCreateRequest {
 
 	@NotBlank
 	private String name;
