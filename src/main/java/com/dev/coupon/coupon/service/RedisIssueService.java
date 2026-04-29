@@ -1,17 +1,23 @@
 package com.dev.coupon.coupon.service;
 
+import com.dev.coupon.common.exception.BusinessException;
 import com.dev.coupon.common.exception.SystemException;
+import com.dev.coupon.coupon.domain.CouponEvent;
 import com.dev.coupon.coupon.domain.CouponIssueResult;
 import com.dev.coupon.coupon.exception.CouponErrorCode;
-import com.dev.coupon.coupon.exception.RedisErrorCode;
+import com.dev.coupon.coupon.exception.SystemErrorCode;
+import com.dev.coupon.coupon.repository.CouponEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -19,8 +25,9 @@ import java.util.List;
 public class RedisIssueService {
 
 	private final StringRedisTemplate redisTemplate;
+	private final CouponEventRepository eventRepository;
 
-	private static final String RESERVE_COUPON_LUA_SCRIPT = """
+	private static final String RESERVE_COUPON_SCRIPT = """
 			  	if redis.call('SISMEMBER', KEYS[2], ARGV[1]) == 1 then
 			  		return 1
 			  	end
@@ -36,8 +43,21 @@ public class RedisIssueService {
 			  """;
 
 	private static final RedisScript<Long> RESERVE_SCRIPT = new DefaultRedisScript<>(
-			  RESERVE_COUPON_LUA_SCRIPT,
+			  RESERVE_COUPON_SCRIPT,
 			  Long.class
+	);
+
+	// 선점된 사용자일 때만 복구 진행
+	private static final String RESERVE_COUPON_ROLLBACK_SCRIPT = """
+			  if redis.call('SISMEMBER', KEYS[2], ARGV[1]) == 1 then
+			  	  redis.call('INCR', KEYS[1])
+			  	  redis.call('SREM', KEYS[2], ARGV[1])
+			  end
+			  """;
+
+	private static final RedisScript<Void> ROLLBACK_SCRIPT = new DefaultRedisScript<>(
+			  RESERVE_COUPON_ROLLBACK_SCRIPT,
+			  Void.class
 	);
 
 	public CouponIssueResult reserveCoupon(Long eventId, Long userId) {
@@ -50,11 +70,12 @@ public class RedisIssueService {
 					  userId.toString()
 			);
 		} catch (Exception e) {
-			throw new SystemException(RedisErrorCode.REDIS_ISSUE_EXECUTION_FAILED, e);
+
+			throw new SystemException(SystemErrorCode.REDIS_ISSUE_EXECUTION_FAILED, e);
 		}
 
 		if (rawResult == null) {
-			throw new SystemException(RedisErrorCode.REDIS_ISSUE_INVALID_RESULT);
+			throw new SystemException(SystemErrorCode.REDIS_ISSUE_INVALID_RESULT);
 		}
 
 		if (rawResult == 1L) return CouponIssueResult.ALREADY_ISSUED;
@@ -62,7 +83,24 @@ public class RedisIssueService {
 		if (rawResult == 3L) return CouponIssueResult.SUCCESS;
 
 		log.error("[REDIS_ISSUE_INVALID_RESULT] result={}, eventId={}, userId={}", rawResult, eventId, userId);
-		throw new SystemException(RedisErrorCode.REDIS_ISSUE_INVALID_RESULT);
+		throw new SystemException(SystemErrorCode.REDIS_ISSUE_INVALID_RESULT);
+	}
+
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void reserveRollback(Long eventId, Long userId) {
+		CouponEvent event = eventRepository.findById(eventId).orElseThrow();
+
+		try {
+			redisTemplate.execute(
+					  ROLLBACK_SCRIPT,
+					  List.of(stockKey(eventId), issuedUsersKey(eventId)),
+					  userId.toString()
+			);
+		}
+		catch (Exception e) {
+			event.markStockResyncPending();
+			throw new SystemException(SystemErrorCode.COUPON_ISSUE_COMPENSATION_FAILED, e);
+		}
 	}
 
 	public void initEventStock(Long eventId, int remainingQuantity) {
