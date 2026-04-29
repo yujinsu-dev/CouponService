@@ -127,7 +127,7 @@ public class CouponEvent extends BaseEntity {
 		}
 
 		return discountAmount;
-	};
+	}
 
 	private static void validateIssuePeriod(LocalDateTime issueStartAt, LocalDateTime issueEndAt) {
 		LocalDateTime now = LocalDateTime.now();

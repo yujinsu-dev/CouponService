@@ -1,6 +1,5 @@
 package com.dev.coupon.coupon.service;
 
-import com.dev.coupon.common.exception.BusinessException;
 import com.dev.coupon.common.exception.SystemException;
 import com.dev.coupon.coupon.domain.CouponEvent;
 import com.dev.coupon.coupon.domain.CouponIssueResult;
@@ -17,7 +16,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Slf4j
