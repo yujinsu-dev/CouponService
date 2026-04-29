@@ -70,7 +70,7 @@ public class RedisIssueService {
 
 	private String stockKey(Long eventId) {
 		return "coupon:event:" + eventId + ":stock";
-	};
+	}
 
 	private String issuedUsersKey(Long eventId) {
 		return "coupon:event:" + eventId + ":issued-users";
