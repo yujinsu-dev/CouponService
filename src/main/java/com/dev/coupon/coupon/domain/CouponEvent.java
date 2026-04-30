@@ -86,6 +86,7 @@ public class CouponEvent extends BaseEntity {
 	) {
 		validateIssuePeriod(issueStartAt, issueEndAt);
 		validateDiscountPolicy(discountType, discountValue, maxDiscountAmount);
+		validateTotalQuantity(totalQuantity);
 
 		return new CouponEvent(
 				  name,
@@ -161,6 +162,12 @@ public class CouponEvent extends BaseEntity {
 		// % 할인은 discountValue가 100보다 작아야 함
 		if (discountType == DiscountType.PERCENTAGE && discountValue > 100) {
 			throw new BusinessException(CouponErrorCode.INVALID_PERCENTAGE_DISCOUNT_VALUE);
+		}
+	}
+
+	private static void validateTotalQuantity(int totalQuantity) {
+		if (totalQuantity <= 0) {
+			throw new BusinessException(CouponErrorCode.INVALID_COUPON_EVENT_TOTAL_QUANTITY);
 		}
 	}
 
