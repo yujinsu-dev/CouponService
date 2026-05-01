@@ -24,6 +24,7 @@ public class RedisIssueService {
 
 	private final StringRedisTemplate redisTemplate;
 	private final CouponEventRepository eventRepository;
+	private final CouponStockResyncService resyncService;
 
 	private static final String RESERVE_COUPON_SCRIPT = """
 			  	if redis.call('SISMEMBER', KEYS[2], ARGV[1]) == 1 then
@@ -96,7 +97,8 @@ public class RedisIssueService {
 			);
 		}
 		catch (Exception e) {
-			event.markStockResyncPending();
+			// DB, Redis 둘다 실패 케이스 마킹
+			resyncService.markPending(eventId);
 			throw new SystemException(SystemErrorCode.COUPON_ISSUE_COMPENSATION_FAILED, e);
 		}
 	}

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface CouponIssueRepository extends JpaRepository<CouponIssue, Long> {
@@ -17,4 +18,9 @@ public interface CouponIssueRepository extends JpaRepository<CouponIssue, Long> 
 			  @Param("id") Long id,
 			  @Param("userId") Long userId
 	);
+
+	int countByCouponEventId(Long eventId);
+
+	@Query("select ci.user.id from CouponIssue ci where ci.couponEvent.id = :eventId")
+	List<Long> findUserIdByCouponEventId(@Param("eventId") Long eventId);
 }

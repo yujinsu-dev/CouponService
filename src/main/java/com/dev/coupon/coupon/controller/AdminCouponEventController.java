@@ -7,6 +7,7 @@ import com.dev.coupon.coupon.dto.CouponEventCreateRequest;
 import com.dev.coupon.coupon.dto.CouponEventResponse;
 import com.dev.coupon.coupon.dto.condition.CouponEventCondition;
 import com.dev.coupon.coupon.service.CouponEventService;
+import com.dev.coupon.coupon.service.CouponStockRecoveryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,6 +22,7 @@ import java.util.List;
 public class AdminCouponEventController {
 
 	private final CouponEventService couponEventService;
+	private final CouponStockRecoveryService stockRecoveryService;
 
 	@PostMapping
 	public CouponEventResponse create(@Valid @RequestBody CouponEventCreateRequest request) {
@@ -44,5 +46,11 @@ public class AdminCouponEventController {
 		);
 
 		return ApiResponse.success(couponEventService.search(condition));
+	}
+
+	@PostMapping("/{eventId}/resync")
+	public ApiResponse<Void> resyncCouponEventStock(@PathVariable Long eventId) {
+		stockRecoveryService.resync(eventId);
+		return ApiResponse.success(null);
 	}
 }

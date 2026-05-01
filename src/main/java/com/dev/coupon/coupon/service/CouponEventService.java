@@ -34,6 +34,7 @@ public class CouponEventService {
 				  request.getIssueEndAt()
 		));
 
+		// 쿠폰 수량 init
 		redisIssueService.initEventStock(event.getId(), event.getRemainingQuantity());
 
 		return new CouponEventResponse(
