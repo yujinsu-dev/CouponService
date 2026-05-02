@@ -61,8 +61,6 @@ public class RedisIssueService {
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void reserveRollback(Long eventId, Long userId) {
-		CouponEvent event = eventRepository.findById(eventId).orElseThrow();
-
 		try {
 			redisTemplate.execute(
 					  ROLLBACK_SCRIPT,
