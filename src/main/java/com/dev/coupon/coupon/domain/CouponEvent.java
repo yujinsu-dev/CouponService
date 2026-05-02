@@ -100,10 +100,6 @@ public class CouponEvent extends BaseEntity {
 		);
 	}
 
-	public void markStockResyncPending() {
-		this.stockResyncPending = true;
-	}
-
 	public Long calculateDiscountAmount(Long productPrice) {
 		Long discountAmount = 0L;
 

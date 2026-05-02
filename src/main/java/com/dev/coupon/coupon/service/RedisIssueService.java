@@ -1,6 +1,7 @@
 package com.dev.coupon.coupon.service;
 
 import com.dev.coupon.common.exception.SystemException;
+import com.dev.coupon.common.util.RedisLuaScriptLoader;
 import com.dev.coupon.coupon.domain.CouponEvent;
 import com.dev.coupon.coupon.domain.CouponIssueResult;
 import com.dev.coupon.coupon.exception.CouponErrorCode;
@@ -9,7 +10,6 @@ import com.dev.coupon.coupon.repository.CouponEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -26,38 +26,12 @@ public class RedisIssueService {
 	private final CouponEventRepository eventRepository;
 	private final CouponStockResyncService resyncService;
 
-	private static final String RESERVE_COUPON_SCRIPT = """
-			  	if redis.call('SISMEMBER', KEYS[2], ARGV[1]) == 1 then
-			  		return 1
-			  	end
-			  
-			  	local stock = tonumber(redis.call('GET', KEYS[1]))
-			  	if stock == nil or stock <= 0 then
-			  		return 2
-			  	end
-			  
-			  	redis.call('DECR', KEYS[1])
-			  	redis.call('SADD', KEYS[2], ARGV[1])
-			  	return 3
-			  """;
-
-	private static final RedisScript<Long> RESERVE_SCRIPT = new DefaultRedisScript<>(
-			  RESERVE_COUPON_SCRIPT,
-			  Long.class
-	);
+	private static final RedisScript<Long> RESERVE_SCRIPT =
+			  RedisLuaScriptLoader.longScript("lua/coupon/reserve_coupon.lua");
 
 	// 선점된 사용자일 때만 복구 진행
-	private static final String RESERVE_COUPON_ROLLBACK_SCRIPT = """
-			  if redis.call('SISMEMBER', KEYS[2], ARGV[1]) == 1 then
-			  	  redis.call('INCR', KEYS[1])
-			  	  redis.call('SREM', KEYS[2], ARGV[1])
-			  end
-			  """;
-
-	private static final RedisScript<Void> ROLLBACK_SCRIPT = new DefaultRedisScript<>(
-			  RESERVE_COUPON_ROLLBACK_SCRIPT,
-			  Void.class
-	);
+	private static final RedisScript<Void> ROLLBACK_SCRIPT =
+			  RedisLuaScriptLoader.voidScript("lua/coupon/reserve_coupon_rollback.lua");
 
 	public CouponIssueResult reserveCoupon(Long eventId, Long userId) {
 		Long rawResult;

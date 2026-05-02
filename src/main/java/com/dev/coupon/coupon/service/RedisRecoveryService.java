@@ -1,11 +1,11 @@
 package com.dev.coupon.coupon.service;
 
 import com.dev.coupon.common.exception.SystemException;
+import com.dev.coupon.common.util.RedisLuaScriptLoader;
 import com.dev.coupon.coupon.exception.SystemErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
 
@@ -19,21 +19,8 @@ public class RedisRecoveryService {
 
 	private final StringRedisTemplate redisTemplate;
 
-	private static final String RECOVERY_STOCK_SCRIPT = """
-			  redis.call('DEL', KEYS[1], KEYS[2])
-			  redis.call('SET', KEYS[1], ARGV[1])
-			  
-			  for i = 2, #ARGV do
-			  	redis.call('SADD', KEYS[2], ARGV[i])
-			  end
-			  
-			  return 1
-			  """;
-
-	private static final RedisScript<Long> RECOVERY_SCRIPT = new DefaultRedisScript<>(
-			  RECOVERY_STOCK_SCRIPT,
-			  Long.class
-	);
+	private static final RedisScript<Long> RECOVERY_SCRIPT =
+			  RedisLuaScriptLoader.longScript("lua/coupon/recovery_stock.lua");
 
 	public void restoreStock(Long eventId, List<Long> userIds, int remainingQuantity) {
 		List<String> args = new ArrayList<>();
