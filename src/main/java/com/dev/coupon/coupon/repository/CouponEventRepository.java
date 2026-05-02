@@ -15,7 +15,7 @@ public interface CouponEventRepository extends JpaRepository<CouponEvent, Long>,
 			  	where ce.id = :couponEventId
 			  	and ce.remainingQuantity > 0
 			""")
-	void decreaseStockIfAvailable(@Param("couponEventId") Long couponEventId);
+	int decreaseStockIfAvailable(@Param("couponEventId") Long couponEventId);
 
 	@Modifying(clearAutomatically = true, flushAutomatically = true)
 	@Query("""

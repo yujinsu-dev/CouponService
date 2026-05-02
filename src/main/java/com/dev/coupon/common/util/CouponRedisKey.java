@@ -15,6 +15,14 @@ public final class CouponRedisKey {
 		return PREFIX + ":event:" + couponEventId + ":issued-users";
 	}
 
+	public static String issueStartAt(Long couponEventId) {
+		return PREFIX + ":event:" + couponEventId + ":issue-start-at";
+	}
+
+	public static String issueEndAt(Long couponEventId) {
+		return PREFIX + ":event:" + couponEventId + ":issue-end-at";
+	}
+
 	public static String issueStream() {
 		return PREFIX + ":issue:stream";
 	}

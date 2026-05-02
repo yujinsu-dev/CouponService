@@ -34,21 +34,26 @@ public class CouponIssueService {
 
 	@Transactional
 	public Long issueCoupon(Long couponEventId, Long userId) {
-		User findUser = userRepository.findById(userId)
-				  .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+		// Redis Lua로 발급 가능 여부 검증과 재고 선점을 원자적으로 처리
+		CouponIssueResult issueResult = redisIssueService.reserveCouponIssue(couponEventId, userId);
 
-		CouponEvent findEvent = eventRepository.findById(couponEventId)
-				  .orElseThrow(() -> new BusinessException(CouponErrorCode.COUPON_EVENT_NOT_FOUND));
-
-		validateCouponIssue(findEvent);
-		
-		// Redis로 중복 발급 여부와 재고 차감을 원자적으로 선점
-		CouponIssueResult issueResult = redisIssueService.reserveCoupon(findEvent.getId(), findUser.getId());
-		validateRedisIssueResult(issueResult);
-
-		eventRepository.decreaseStockIfAvailable(couponEventId);
+		throwIfRedisIssueFailed(issueResult);
 
 		try {
+			User findUser = findUser(userId);
+			CouponEvent findEvent = findEvent(couponEventId);
+
+			validateCouponIssue(findEvent);
+
+			int decreasedStockCount = eventRepository.decreaseStockIfAvailable(couponEventId);
+
+			if (decreasedStockCount == 0) {
+				log.error("[COUPON_STOCK_INCONSISTENT] eventId = {}, userId = {}", couponEventId, userId);
+				redisIssueService.reserveRollback(couponEventId, userId);
+				resyncService.markPending(couponEventId);
+				throw new SystemException(SystemErrorCode.COUPON_STOCK_INCONSISTENT);
+			}
+
 			// Redis 선점 후 DB 저장이 실패하면 Redis 롤백 처리 redisIssueService.reserveRollback()
 			CouponIssue couponIssue = issueRepository.save(new CouponIssue(
 					  findEvent,
@@ -58,27 +63,41 @@ public class CouponIssueService {
 					  null
 			));
 			issueRepository.flush();
-			return couponIssue.getId();
 
+			return couponIssue.getId();
+		} catch (BusinessException e) {
+			redisIssueService.reserveRollback(couponEventId, userId);
+			throw e;
 		} catch (DataIntegrityViolationException e) {
 			// 데이터 무결성 에러 발생 시 DB유니크 제약조건 위배하면 비즈니스 에러로 치환, 그 외 저장 실패(레디스 롤백)
 			if (isCouponIssueUniqueViolation(e)) {
-				resyncService.markPending(findEvent.getId());
-				log.warn("[COUPON_ALREADY_ISSUE_DB_DUPLICATE] eventId={}, userId={}, fallback=db_unique_constraint",
-						  findEvent.getId(),
-						  findUser.getId()
+				resyncService.markPending(couponEventId);
+				log.warn("[COUPON_ALREADY_ISSUE_DB_DUPLICATE] eventId = {}, userId = {} ",
+						  couponEventId,
+						  userId
 				);
 				throw new BusinessException(CouponErrorCode.COUPON_ALREADY_ISSUE);
 			}
 
-			log.error("[PERSIST_FAILED] eventId = {}, userId = {}", findEvent.getId(), findUser.getId(), e);
-			redisIssueService.reserveRollback(findEvent.getId(), findUser.getId());
+			log.error("[PERSIST_FAILED] eventId = {}, userId = {}", couponEventId, userId, e);
+			redisIssueService.reserveRollback(couponEventId, userId);
 			throw new SystemException(SystemErrorCode.COUPON_ISSUE_PERSIST_FAILED, e);
+		} catch (SystemException e) {
+			throw e;
 		} catch (Exception e) {
-			log.error("[PERSIST_FAILED] eventId = {}, userId = {}", findEvent.getId(), findUser.getId(), e);
-			redisIssueService.reserveRollback(findEvent.getId(), findUser.getId());
+			log.error("[PERSIST_FAILED] eventId = {}, userId = {}", couponEventId, userId, e);
+			redisIssueService.reserveRollback(couponEventId, userId);
 			throw new SystemException(SystemErrorCode.COUPON_ISSUE_PERSIST_FAILED, e);
 		}
+	}
+
+	private CouponEvent findEvent(Long couponEventId) {
+		return eventRepository.findById(couponEventId)
+				  .orElseThrow(() -> new BusinessException(CouponErrorCode.COUPON_EVENT_NOT_FOUND));
+	}
+
+	private User findUser(Long userId) {
+		return userRepository.findById(userId).orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 	}
 
 	private boolean isCouponIssueUniqueViolation(DataIntegrityViolationException exception) {
@@ -135,13 +154,25 @@ public class CouponIssueService {
 		}
 	}
 
-	private void validateRedisIssueResult(CouponIssueResult issueResult) {
+	private void throwIfRedisIssueFailed(CouponIssueResult issueResult) {
 		if (issueResult == CouponIssueResult.ALREADY_ISSUED) {
 			throw new BusinessException(CouponErrorCode.COUPON_ALREADY_ISSUE);
 		}
 
 		if (issueResult == CouponIssueResult.SOLD_OUT) {
 			throw new BusinessException(CouponErrorCode.COUPON_SOLD_OUT);
+		}
+
+		if (issueResult == CouponIssueResult.NOT_READY) {
+			throw new BusinessException(CouponErrorCode.COUPON_NOT_ISSUABLE);
+		}
+
+		if (issueResult == CouponIssueResult.NOT_STARTED) {
+			throw new BusinessException(CouponErrorCode.COUPON_NOT_ISSUABLE);
+		}
+
+		if (issueResult == CouponIssueResult.ENDED) {
+			throw new BusinessException(CouponErrorCode.COUPON_NOT_ISSUABLE);
 		}
 	}
 }

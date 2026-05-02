@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -31,14 +33,22 @@ public class RedisIssueService {
 	private static final RedisScript<Void> ROLLBACK_SCRIPT =
 			  RedisLuaScriptLoader.voidScript("lua/coupon/reserve_coupon_rollback.lua");
 
-	public CouponIssueResult reserveCoupon(Long eventId, Long userId) {
+	public CouponIssueResult reserveCouponIssue(Long eventId, Long userId) {
+		long nowMillis = System.currentTimeMillis();
+
 		String issueResultStatus;
 
 		try {
 			issueResultStatus = redisTemplate.execute(
 					  RESERVE_SCRIPT,
-					  List.of(CouponRedisKey.stock(eventId), CouponRedisKey.issuedUsers(eventId)),
-					  userId.toString()
+					  List.of(
+								 CouponRedisKey.stock(eventId),
+								 CouponRedisKey.issuedUsers(eventId),
+								 CouponRedisKey.issueStartAt(eventId),
+								 CouponRedisKey.issueEndAt(eventId)
+					  ),
+					  userId.toString(),
+					  String.valueOf(nowMillis)
 			);
 		} catch (Exception e) {
 			throw new SystemException(SystemErrorCode.REDIS_ISSUE_EXECUTION_FAILED, e);
@@ -72,13 +82,34 @@ public class RedisIssueService {
 		}
 	}
 
-	public void initEventStock(Long eventId, int remainingQuantity) {
+	public void initEventIssueState(
+			  Long eventId,
+			  int remainingQuantity,
+			  LocalDateTime issueStartAt,
+			  LocalDateTime issueEndAt
+	) {
+		long startAt = toEpochMillis(issueStartAt);
+		long endAt = toEpochMillis(issueEndAt);
+
 		Boolean initalized = redisTemplate.opsForValue()
 				  .setIfAbsent(CouponRedisKey.stock(eventId), String.valueOf(remainingQuantity));
+
+		redisTemplate.opsForValue()
+				  .setIfAbsent(CouponRedisKey.issueStartAt(eventId), String.valueOf(startAt));
+
+		redisTemplate.opsForValue()
+				  .setIfAbsent(CouponRedisKey.issueEndAt(eventId), String.valueOf(endAt));
 
 		if (!Boolean.TRUE.equals(initalized)) {
 			throw new SystemException(CouponErrorCode.REDIS_STOCK_ALREADY_INITIALIZED);
 		}
 
 	}
+
+	private long toEpochMillis(LocalDateTime issueStartAt) {
+		return issueStartAt.atZone(ZoneId.of("Asia/Seoul"))
+				  .toInstant()
+				  .toEpochMilli();
+	}
+
 }
