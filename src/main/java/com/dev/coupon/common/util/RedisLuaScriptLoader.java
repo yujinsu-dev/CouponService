@@ -17,6 +17,10 @@ public final class RedisLuaScriptLoader {
 		return script(path, Long.class);
 	}
 
+	public static RedisScript<String> stringScript(String path) {
+		return script(path, String.class);
+	}
+
 	public static RedisScript<Void> voidScript(String path) {
 		return script(path, Void.class);
 	}

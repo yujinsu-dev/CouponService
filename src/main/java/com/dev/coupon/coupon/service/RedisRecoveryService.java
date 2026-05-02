@@ -1,6 +1,7 @@
 package com.dev.coupon.coupon.service;
 
 import com.dev.coupon.common.exception.SystemException;
+import com.dev.coupon.common.util.CouponRedisKey;
 import com.dev.coupon.common.util.RedisLuaScriptLoader;
 import com.dev.coupon.coupon.exception.SystemErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,7 @@ public class RedisRecoveryService {
 		try {
 			Long result = redisTemplate.execute(
 					  RECOVERY_SCRIPT,
-					  List.of(stockKey(eventId), issuedUsersKey(eventId)),
+					  List.of(CouponRedisKey.stock(eventId), CouponRedisKey.issuedUsers(eventId)),
 					  args.toArray()
 			);
 
@@ -48,13 +49,5 @@ public class RedisRecoveryService {
 			log.error("[REDIS_RECOVERY_EXECUTION_FAILED] eventId={}, remainingQuantity={}", eventId, remainingQuantity, e);
 			throw new SystemException(SystemErrorCode.REDIS_RECOVERY_EXECUTION_FAILED, e);
 		}
-	}
-
-	private String stockKey(Long eventId) {
-		return "coupon:event:" + eventId + ":stock";
-	}
-
-	private String issuedUsersKey(Long eventId) {
-		return "coupon:event:" + eventId + ":issued-users";
 	}
 }
