@@ -22,12 +22,4 @@ public final class CouponRedisKey {
 	public static String issueEndAt(Long couponEventId) {
 		return PREFIX + ":event:" + couponEventId + ":issue-end-at";
 	}
-
-	public static String issueStream() {
-		return PREFIX + ":issue:stream";
-	}
-
-	public static String issueConsumerGroup() {
-		return PREFIX + ":issue:group";
-	}
 }
