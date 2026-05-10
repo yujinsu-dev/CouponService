@@ -1,10 +1,12 @@
 package com.dev.coupon.product.service;
 
+import com.dev.coupon.common.exception.BusinessException;
 import com.dev.coupon.product.domain.Product;
 import com.dev.coupon.common.PageResponse;
 import com.dev.coupon.product.dto.ProductCreateRequest;
 import com.dev.coupon.product.dto.ProductResponse;
 import com.dev.coupon.product.dto.ProductCondition;
+import com.dev.coupon.product.exception.ProductErrorCode;
 import com.dev.coupon.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -49,7 +51,7 @@ public class ProductService {
 		if (condition.getMinPrice() != null
 				  && condition.getMaxPrice() != null
 				  && condition.getMinPrice() > condition.getMaxPrice()) {
-			throw new IllegalArgumentException("minPrice는 maxPrice보다 클 수 없습니다.");
+			throw new BusinessException(ProductErrorCode.INVALID_PRODUCT_SEARCH_CONDITION);
 		}
 	}
 }
