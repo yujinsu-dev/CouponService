@@ -11,6 +11,8 @@ import com.dev.coupon.coupon.service.CouponStockRecoveryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -25,8 +27,10 @@ public class AdminCouponEventController {
 	private final CouponStockRecoveryService stockRecoveryService;
 
 	@PostMapping
-	public CouponEventResponse create(@Valid @RequestBody CouponEventCreateRequest request) {
-		return couponEventService.create(request);
+	public ResponseEntity<ApiResponse<CouponEventResponse>> create(@Valid @RequestBody CouponEventCreateRequest request) {
+		return ResponseEntity
+				  .status(HttpStatus.CREATED)
+				  .body(ApiResponse.success(couponEventService.create(request)));
 	}
 
 	@GetMapping
