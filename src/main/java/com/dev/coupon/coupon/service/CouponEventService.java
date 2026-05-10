@@ -1,6 +1,7 @@
 package com.dev.coupon.coupon.service;
 
 import com.dev.coupon.common.exception.BusinessException;
+import com.dev.coupon.common.exception.SystemException;
 import com.dev.coupon.coupon.domain.CouponEvent;
 import com.dev.coupon.coupon.dto.CouponEventCreateRequest;
 import com.dev.coupon.coupon.dto.CouponEventResponse;
@@ -106,6 +107,16 @@ public class CouponEventService {
 					  issueStartAt,
 					  issueEndAt
 			);
+		} catch (SystemException e) {
+			log.error(
+					  "[REDIS_STOCK_INIT_FAILED] code = {}, message = {}, eventId = {}, remainingQuantity = {}",
+					  e.getErrorCode().getCode(),
+					  e.getErrorCode().getMessage(),
+					  eventId,
+					  remainingQuantity,
+					  e
+			);
+			resyncService.markPending(eventId);
 		} catch (Exception e) {
 			log.error("[REDIS_STOCK_INIT_FAILED] eventId = {}, remainingQuantity = {}", eventId, remainingQuantity, e);
 			resyncService.markPending(eventId);

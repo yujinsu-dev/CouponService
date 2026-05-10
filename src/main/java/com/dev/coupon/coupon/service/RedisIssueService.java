@@ -4,7 +4,6 @@ import com.dev.coupon.common.exception.SystemException;
 import com.dev.coupon.common.util.CouponRedisKey;
 import com.dev.coupon.common.util.RedisLuaScriptLoader;
 import com.dev.coupon.coupon.domain.CouponIssueResult;
-import com.dev.coupon.coupon.exception.CouponErrorCode;
 import com.dev.coupon.coupon.exception.SystemErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -107,7 +106,7 @@ public class RedisIssueService {
 		);
 
 		if (!Boolean.TRUE.equals(initialized)) {
-			throw new SystemException(CouponErrorCode.REDIS_STOCK_ALREADY_INITIALIZED);
+			throw new SystemException(SystemErrorCode.REDIS_STOCK_ALREADY_INITIALIZED);
 		}
 
 	}

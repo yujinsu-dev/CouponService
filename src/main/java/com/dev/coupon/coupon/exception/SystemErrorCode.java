@@ -19,7 +19,9 @@ public enum SystemErrorCode implements ErrorCode {
 	REDIS_RECOVERY_EXECUTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "REDIS_RECOVERY_EXECUTION_FAILED",
 			  "Redis 복구 처리 중 오류가 발생했습니다."),
 	COUPON_STOCK_RESYNC_COMPLETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "COUPON_STOCK_RESYNC_COMPLETE_FAILED",
-			  "쿠폰 재고 복구 완료 처리 중 오류가 발생했습니다.");
+			  "쿠폰 재고 복구 완료 처리 중 오류가 발생했습니다."),
+	REDIS_STOCK_ALREADY_INITIALIZED(HttpStatus.INTERNAL_SERVER_ERROR, "REDIS_STOCK_ALREADY_INITIALIZED",
+			  "재고 초기화가 이미 완료되었습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;
