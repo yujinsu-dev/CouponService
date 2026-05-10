@@ -6,7 +6,12 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ProductErrorCode implements ErrorCode {
-	PRODUCT_NOT_FOUND(HttpStatus.BAD_REQUEST, "PRODUCT_NOT_FOUND", "상품을 찾을 수 없습니다." );
+	PRODUCT_NOT_FOUND(HttpStatus.BAD_REQUEST, "PRODUCT_NOT_FOUND", "상품을 찾을 수 없습니다." ),
+	INVALID_PRODUCT_SEARCH_CONDITION(
+			  HttpStatus.BAD_REQUEST,
+			  "INVALID_PRODUCT_SEARCH_CONDITION",
+			  "상품 검색 조건이 올바르지 않습니다."
+	);
 
 	private final HttpStatus httpStatus;
 	private final String code;
