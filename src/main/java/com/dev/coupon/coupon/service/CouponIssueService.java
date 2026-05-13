@@ -70,7 +70,7 @@ public class CouponIssueService {
 			issueRepository.flush();
 
 			return couponIssue.getId();
-		} catch (BusinessException e) {
+		} catch (BusinessException | SystemException e) {
 			throw e;
 		} catch (DataIntegrityViolationException e) {
 			// 데이터 무결성 에러 발생 시 DB유니크 제약조건 위배하면 비즈니스 에러로 치환, 그 외 저장 실패(레디스 롤백)
@@ -85,8 +85,6 @@ public class CouponIssueService {
 
 			log.error("[PERSIST_FAILED] eventId = {}, userId = {}", couponEventId, userId, e);
 			throw new SystemException(SystemErrorCode.COUPON_ISSUE_PERSIST_FAILED, e);
-		} catch (SystemException e) {
-			throw e;
 		} catch (Exception e) {
 			log.error("[PERSIST_FAILED] eventId = {}, userId = {}", couponEventId, userId, e);
 			throw new SystemException(SystemErrorCode.COUPON_ISSUE_PERSIST_FAILED, e);
@@ -105,12 +103,13 @@ public class CouponIssueService {
 					return;
 				}
 
+				// 일반적인 실패가 아니라 redis, db둘다 신뢰하기 어려운 상황
 				if (status == TransactionSynchronization.STATUS_UNKNOWN || requiresResync.get()) {
 					resyncService.markPending(couponEventId);
 					return;
 				}
 
-				// redis 선점에 성공했으나, DB 트랜잭션 rollback 되고 resync가 아닌 경우
+				// redis 선점에 성공했으나, DB 트랜잭션 rollback 되고 resync가 아닌 경우 STATUS_ROLLED_BACK
 				redisIssueService.reserveRollback(couponEventId, userId);
 			}
 		});
