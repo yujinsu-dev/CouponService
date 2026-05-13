@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 public interface CouponEventRepository extends JpaRepository<CouponEvent, Long>, CouponEventQueryRepository {
 
-	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Modifying(clearAutomatically = true)
 	@Query("""
 			  	update CouponEvent ce
 			  	set ce.remainingQuantity = ce.remainingQuantity -1
@@ -19,7 +19,7 @@ public interface CouponEventRepository extends JpaRepository<CouponEvent, Long>,
 			""")
 	int decreaseStockIfAvailable(@Param("couponEventId") Long couponEventId);
 
-	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Modifying
 	@Query("""
 				update CouponEvent ce
 				set ce.stockResyncPending = true
@@ -43,7 +43,7 @@ public interface CouponEventRepository extends JpaRepository<CouponEvent, Long>,
 			  @Param("issueEndAt") LocalDateTime issueEndAt
 	);
 
-	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Modifying(clearAutomatically = true)
 	@Query("""
 				update CouponEvent ce
 				set ce.status = 'CLOSED'
