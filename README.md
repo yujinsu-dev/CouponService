@@ -1,6 +1,13 @@
 # Coupon Service
 
-Redis Lua Script를 활용해 쿠폰 재고 차감과 중복 발급 검사를 원자적으로 처리하는 쿠폰 발급 서비스입니다.
+## 소개
+
+선착순 쿠폰 발급 상황에서 발생할 수 있는 재고 초과 발급, 중복 발급, 특정 쿠폰 이벤트 row lock 병목 문제를 해결하기 위해 구현한 쿠폰 발급 시스템입니다.
+
+- 개발 기간: 2026.04.16 ~ 진행 중
+- 개발 인원: 개인 프로젝트
+
+Redis Lua Script를 활용해 쿠폰 재고 차감과 중복 발급 검사를 원자적으로 처리합니다.
 
 쿠폰 이벤트 생성, 선착순 쿠폰 발급, 쿠폰 사용, 사용 가능한 쿠폰 조회, 재고 재동기화 기능을 제공합니다.
 
@@ -75,15 +82,30 @@ Redis 선점 이후 DB 처리에 실패할 수 있으므로, 트랜잭션 완료
 
 ## 부하 테스트 및 성능 개선
 
-선착순 쿠폰 발급 구조의 동시성 한계를 확인하기 위해 nGrinder로 부하 테스트를 진행했습니다.
+### 도입 배경
 
-초기에는 DB 트랜잭션 안에서 쿠폰 이벤트 row에 비관적 락을 걸고 재고 차감과 발급 이력 저장을 처리했습니다. 이 방식은 재고 정합성은 보장했지만, 동시 요청이 특정 쿠폰 이벤트 row에 집중될 경우 모든 요청이 동일한 row lock을 기다려야 하는 한계가 있었습니다.
+초기에는 DB 트랜잭션 안에서 쿠폰 이벤트 row에 비관적 락을 걸고 재고 차감과 발급 이력 저장을 처리했습니다.
 
-DB 비관적 락 기반 구조에서는 1,000 VUser 조건까지 발급 정합성을 검증했으며, 1,500 VUser 이상부터 응답 지연과 실패가 증가하는 처리량 한계를 확인했습니다.
+이 방식은 재고 정합성은 보장할 수 있었지만, 동시 요청이 특정 쿠폰 이벤트 row에 집중될 경우 모든 요청이 동일한 row lock을 대기해야 하는 한계가 있었습니다.
 
-이후 Redis Lua Script 기반 구조로 개선하여 DB 진입 전에 발급 가능 여부 확인, 중복 발급 확인, 재고 차감, 발급 유저 등록을 일괄 처리하도록 변경했습니다.
+nGrinder 부하 테스트를 통해 요청 수가 증가할수록 응답 시간이 증가하고 처리량이 제한되는 문제를 확인했고, 발급 가능 여부를 DB 트랜잭션 진입 전에 먼저 판단하는 구조가 필요하다고 판단했습니다.
 
-### 개선 결과
+이를 개선하기 위해 Redis Lua Script 기반의 원자적 발급 처리 구조를 도입했습니다.
+
+### Redis Lua Script 도입 이유
+
+- 발급 가능 여부를 Redis에서 먼저 판단하여 실패 요청이 DB 트랜잭션과 row lock까지 진입하지 않도록 처리
+- 재고 확인, 중복 발급 확인, 재고 차감, 발급 유저 등록을 하나의 원자 연산으로 처리하여 초과 발급 방지
+- 품절, 중복 발급, 발급 기간 외 요청을 DB 접근 전에 차단하여 불필요한 DB 부하와 응답 지연 감소
+- Redis는 발급 가능 여부 선점 처리, DB는 발급 이력 저장과 유니크 제약을 통한 최종 정합성 보장 역할로 분리
+
+### 성과 요약
+
+- DB 비관적 락 기반 구조에서 nGrinder 1,000 VUser 조건까지 발급 정합성을 검증했습니다.
+- 1,500 VUser 이상부터 응답 지연과 실패가 증가하는 처리량 한계를 확인했습니다.
+- Redis Lua Script 기반 구조로 개선한 후, 1,000 VUser 기준 평균 응답 시간이 약 2,378ms에서 약 240ms로 약 90% 감소했습니다.
+- TPS는 약 2.4배 개선되었습니다.
+- 현재 로컬 테스트 환경 기준 안정 통과 구간을 4,000 VUser로 판단했습니다.
 
 | 항목 | DB 비관적 락 기반 | Redis Lua Script 기반 |
 | --- | ---: | ---: |
@@ -149,7 +171,15 @@ DB coupon_event.remaining_quantity
 
 이를 통해 정해진 수량만 발급되었고, 중복 발급 없이 DB와 Redis 재고 정합성이 유지되는지 확인했습니다.
 
+### 테스트 환경
+
+- 로컬 환경에서 nGrinder 기반 부하 테스트 수행
+- 테스트 결과는 로컬 장비 성능, nGrinder agent 설정, DB/Redis 실행 환경에 영향을 받을 수 있습니다.
+
 ## 프로젝트 구조
+
+<details>
+<summary>프로젝트 구조 보기</summary>
 
 ```text
 src/main/java/com/dev/coupon
@@ -187,6 +217,8 @@ src/main/resources
     ├── reserve_coupon_rollback.lua
     └── recovery_stock.lua
 ```
+
+</details>
 
 ## ERD
 <img src="assets/erd.png" alt="ERD" width="800">
@@ -226,25 +258,6 @@ src/main/resources
 | POST | `/api/admin/products` | 상품 생성 |
 | GET | `/api/admin/products` | 상품 조회 |
 
-## 주요 Redis Key
-
-쿠폰 이벤트별 Redis key는 다음 형식을 사용합니다.
-
-```text
-coupon:event:{eventId}:stock
-coupon:event:{eventId}:issued-users
-coupon:event:{eventId}:issue-start-at
-coupon:event:{eventId}:issue-end-at
-```
-
-Redis Set 조회 예시:
-
-```redis
-smembers coupon:event:{eventId}:issued-users
-scard coupon:event:{eventId}:issued-users
-sismember coupon:event:{eventId}:issued-users {userId}
-```
-
 ## 테스트
 
 주요 테스트 범위는 다음과 같습니다.
@@ -260,13 +273,3 @@ sismember coupon:event:{eventId}:issued-users {userId}
 - 쿠폰 사용 정상/실패 흐름
 - 쿠폰 사용 동시성
 - 재고 재동기화 복구
-
-## 스케줄러
-
-만료된 쿠폰 이벤트는 스케줄러를 통해 주기적으로 종료됩니다.
-
-```text
-fixedDelay = 60000
-```
-
-`OPEN` 상태이고 발급 종료 시간이 지난 이벤트는 `CLOSED` 상태로 변경됩니다.
