@@ -18,7 +18,7 @@ repositories {
 }
 
 ext {
-    querydslVersion = '5.0.0'
+    querydslVersion = '5.6.1'
 }
 
 dependencies {
@@ -28,8 +28,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     //Query DSL
-    implementation "com.querydsl:querydsl-jpa:${querydslVersion}:jakarta"
-    annotationProcessor "com.querydsl:querydsl-apt:${querydslVersion}:jakarta"
+    implementation "io.github.openfeign.querydsl:querydsl-jpa:${querydslVersion}:jakarta"
+    annotationProcessor "io.github.openfeign.querydsl:querydsl-apt:${querydslVersion}:jakarta"
     annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
     annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
 
