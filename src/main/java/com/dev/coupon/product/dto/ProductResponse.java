@@ -11,7 +11,7 @@ public class ProductResponse {
 	private final String name;
 	private final Long price;
 
-	private ProductResponse(Long id, String name, Long price) {
+	public ProductResponse(Long id, String name, Long price) {
 		this.id = id;
 		this.name = name;
 		this.price = price;
