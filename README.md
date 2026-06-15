@@ -13,7 +13,7 @@ Redis Lua Script로 쿠폰 발급 가능 여부를 원자적으로 선점하고,
 
 ## AWS 배포 아키텍처
 
-<img src="docs/coupon-deploy-aws.png" alt="AWS 배포 아키텍처" width="900">
+<img src="assets/coupon-deploy-aws.png" alt="AWS 배포 아키텍처" width="900">
 
 ## 기술 스택
 
