@@ -11,6 +11,10 @@ Redis Lua Script로 쿠폰 발급 가능 여부를 원자적으로 선점하고,
 
 쿠폰 이벤트 생성, 선착순 쿠폰 발급, 쿠폰 사용, 사용 가능한 쿠폰 조회, 재고 재동기화 기능을 제공합니다.
 
+## AWS 배포 아키텍처
+
+<img src="docs/coupon-deploy-aws.png" alt="AWS 배포 아키텍처" width="900">
+
 ## 기술 스택
 
 - Java 17
